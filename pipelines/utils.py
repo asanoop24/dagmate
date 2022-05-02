@@ -2,25 +2,12 @@ from typing import Union, Dict, List, Tuple
 from types import FrameType, ModuleType, TracebackType
 from importlib import import_module
 
-from dagster import (
-    get_dagster_logger,
-    op,
-    Nothing,
-    In,
-    Out,
-    OpDefinition,
-    DependencyDefinition,
-    MultiDependencyDefinition)
+from dagster import (get_dagster_logger,op,Nothing,In,Out,OpDefinition,DependencyDefinition,MultiDependencyDefinition)
 
 _logger = get_dagster_logger()
 
 
-def create_op_from_module(
-    name: str,
-    module: ModuleType,
-    inputs: Dict,
-    outputs: Dict
-    ) -> Tuple[OpDefinition,Dict[str,DependencyDefinition]]:
+def create_op_from_module(name: str,module: ModuleType,inputs: Dict,outputs: Dict) -> Tuple[OpDefinition,Dict[str,DependencyDefinition]]:
     
     """
     Args:
