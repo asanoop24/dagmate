@@ -3,18 +3,14 @@ from types import FrameType, ModuleType, TracebackType
 from importlib import import_module
 
 from dagster import (
-    InputDefinition,
-    OutputDefinition,
     get_dagster_logger,
     op,
     Nothing,
     In,
     Out,
     OpDefinition,
-    GraphDefinition,
     DependencyDefinition,
-    MultiDependencyDefinition,
-    job)
+    MultiDependencyDefinition)
 
 _logger = get_dagster_logger()
 
@@ -38,16 +34,16 @@ def create_dynamic_op(
         an OpDefinition object and Dict object with dependency definitions  
     """
 
-    # only create an op for the module if it contains a main function
-    if "main" in dir(module):
+    # only create an op for the module if it contains a step_fn function
+    if "step_fn" in dir(module):
 
-        # fetching the main function from the module
-        _main = module.main
+        # fetching the step_fn function from the module
+        _step_fn = module.step_fn
         _name = name
         
         # renaming the main function as the module name
         # this will be displayed as the op name in dagit ui
-        _main.__name__ = module.__name__
+        _step_fn.__name__ = module.__name__
         
         # preparing the dictionary for ins
         _ins = {k:In() if len(v)==2 else In(Nothing) for k,v in in_args[_name].items()}
@@ -61,6 +57,6 @@ def create_dynamic_op(
             _name,
             ins=_ins,
             out=_out
-            )(_main)
+            )(_step_fn)
 
         return _op, _dep

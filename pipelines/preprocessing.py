@@ -9,7 +9,6 @@ from apml.preprocessing.config import in_args, out_args
 from apml.pipelines.utils import create_dynamic_op
 
 
-# _modules = preprocessing.__all__
 _n_modules = len(_modules)
 _project_name = "apml"
 _pipeline_name = "preprocessing"
