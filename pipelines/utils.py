@@ -2,13 +2,24 @@ from typing import Union, Dict, List, Tuple
 from types import FrameType, ModuleType, TracebackType
 from importlib import import_module
 
-from dagster import (get_dagster_logger,op,Nothing,In,Out,OpDefinition,DependencyDefinition,MultiDependencyDefinition)
+from dagster import (
+    get_dagster_logger,
+    op,
+    Nothing,
+    In,
+    Out,
+    OpDefinition,
+    DependencyDefinition,
+    MultiDependencyDefinition,
+)
 
 _logger = get_dagster_logger()
 
 
-def create_op_from_module(name: str,module: ModuleType,inputs: Dict,outputs: Dict) -> Tuple[OpDefinition,Dict[str,DependencyDefinition]]:
-    
+def create_op_from_module(
+    name: str, module: ModuleType, inputs: Dict, outputs: Dict
+) -> Tuple[OpDefinition, Dict[str, DependencyDefinition]]:
+
     """
     Args:
         name (str):
@@ -22,7 +33,7 @@ def create_op_from_module(name: str,module: ModuleType,inputs: Dict,outputs: Dic
 
     Returns:
         a tuple with 2 objects
-        an OpDefinition object and Dict object with dependency definitions  
+        an OpDefinition object and Dict object with dependency definitions
     """
 
     # only create an op for the module if it contains a step_fn function
@@ -31,16 +42,19 @@ def create_op_from_module(name: str,module: ModuleType,inputs: Dict,outputs: Dic
         # fetching the step_fn function from the module
         _step_fn = module.step_fn
         _name = name
-        
+
         # renaming the main function as the module name
         # this will be displayed as the op name in dagit ui
         _step_fn.__name__ = module.__name__
-        
+
         # preparing the dictionary for ins
-        _ins = {k:In() if len(v)==2 else In(Nothing) for k,v in inputs[_name].items()}
-        _dep = {k:DependencyDefinition(v[0], v[1]) if len(v)==2 else DependencyDefinition(v[0]) for k,v in inputs[_name].items()}
-        _out = {v:Out() for v in outputs[_name]}
-        
+        _ins = {k: In() if len(v) == 2 else In(Nothing) for k, v in inputs[_name].items()}
+        _dep = {
+            k: DependencyDefinition(v[0], v[1]) if len(v) == 2 else DependencyDefinition(v[0])
+            for k, v in inputs[_name].items()
+        }
+        _out = {v: Out() for v in outputs[_name]}
+
         # wrapping the main function with the op decorator
         # the current process doesn't accept any parameters
         # and is only based on previous ops' execution

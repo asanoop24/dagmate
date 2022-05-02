@@ -1,4 +1,5 @@
 from dagster import get_dagster_logger, GraphDefinition
+
 _logger = get_dagster_logger()
 
 from importlib import import_module
@@ -16,7 +17,8 @@ _pipeline_name = "preprocessing"
 _ops = []
 _deps = {}
 for _name in _modules:
-    if _name == "config": continue
+    if _name == "config":
+        continue
 
     # importing the module and saving it into a variable _mod
     _module = import_module(f"{_project_name}.{_pipeline_name}.{_name}")
@@ -26,8 +28,4 @@ for _name in _modules:
     _deps[_name] = _dep
 
 
-_ = GraphDefinition(
-    name="preprocessing",
-    node_defs=_ops,
-    dependencies=_deps
-).to_job()
+_ = GraphDefinition(name="preprocessing", node_defs=_ops, dependencies=_deps).to_job()
