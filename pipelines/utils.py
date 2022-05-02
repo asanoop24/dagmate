@@ -53,10 +53,6 @@ def create_dynamic_op(
         # wrapping the main function with the op decorator
         # the current process doesn't accept any parameters
         # and is only based on previous ops' execution
-        _op = op(
-            _name,
-            ins=_ins,
-            out=_out
-            )(_step_fn)
+        _op = op(_name, ins=_ins, out=_out)(_step_fn)
 
         return _op, _dep
