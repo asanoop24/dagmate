@@ -9,3 +9,6 @@ repos:
     rev: 21.12b0
     hooks:
     -   id: black
+        language: python
+        types: [python]
+        args: ["--line-length=100"]

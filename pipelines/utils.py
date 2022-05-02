@@ -15,7 +15,7 @@ from dagster import (
 _logger = get_dagster_logger()
 
 
-def create_dynamic_op(
+def create_op_from_module(
     name: str,
     module: ModuleType,
     inputs: Dict,

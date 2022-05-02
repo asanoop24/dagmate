@@ -6,7 +6,7 @@ from importlib import import_module
 from apml.preprocessing import __all__ as _modules
 from apml.preprocessing.config import inputs, outputs
 
-from apml.pipelines.utils import create_dynamic_op
+from apml.pipelines.utils import create_op_from_module
 
 
 _n_modules = len(_modules)
@@ -21,7 +21,7 @@ for _name in _modules:
     # importing the module and saving it into a variable _mod
     _module = import_module(f"{_project_name}.{_pipeline_name}.{_name}")
 
-    _op, _dep = create_dynamic_op(_name, _module, inputs, outputs)
+    _op, _dep = create_op_from_module(_name, _module, inputs, outputs)
     _ops.append(_op)
     _deps[_name] = _dep
 
