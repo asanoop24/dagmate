@@ -28,6 +28,10 @@ def create_dynamic_op(
             name of the op to be displayed in the graph
         module (ModuleType):
             module/script object imported from the directory
+        inputs (Dict):
+            dictionary of input dependencies as defined in config file
+        outputs (Dict):
+            dictionary of output dependencies as defined in config file
 
     Returns:
         a tuple with 2 objects
