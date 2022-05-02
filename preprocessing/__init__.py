@@ -1,4 +1,4 @@
-from apml.preprocessing.config import in_args
+from apml.preprocessing.config import inputs
 
-__all__ = list(in_args.keys())
+__all__ = list(inputs.keys())
 __all__.append("config")

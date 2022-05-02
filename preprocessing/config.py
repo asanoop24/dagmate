@@ -1,4 +1,4 @@
-in_args = {
+inputs = {
     "a": {},
     "b": {},
     "c": {
@@ -12,7 +12,7 @@ in_args = {
 }
 
 
-out_args = {
+outputs = {
     "a": ["x1", "x2"],
     "b": ["result"],
     "c": ["x4","x5"],
