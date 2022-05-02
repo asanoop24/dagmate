@@ -1,11 +1,3 @@
-dependencies = {
-    "a": None,
-    "b": None,
-    "c": ["a","b"],
-    "d": "c"
-}
-
-
 in_args = {
     "a": {},
     "b": {},

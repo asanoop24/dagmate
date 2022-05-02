@@ -50,43 +50,17 @@ def create_dynamic_op(
         _main.__name__ = module.__name__
         
         # preparing the dictionary for ins
-        # print([vl for k,vl in in_args[_name].items()])
-        ins = {k:In() if len(v)==2 else In(Nothing) for k,v in in_args[_name].items()}
-        deps = {k:DependencyDefinition(v[0], v[1]) if len(v)==2 else DependencyDefinition(v[0]) for k,v in in_args[_name].items()}
-        out = {v:Out() for v in out_args[_name]}
+        _ins = {k:In() if len(v)==2 else In(Nothing) for k,v in in_args[_name].items()}
+        _dep = {k:DependencyDefinition(v[0], v[1]) if len(v)==2 else DependencyDefinition(v[0]) for k,v in in_args[_name].items()}
+        _out = {v:Out() for v in out_args[_name]}
         
         # wrapping the main function with the op decorator
         # the current process doesn't accept any parameters
         # and is only based on previous ops' execution
-        # _op = op(
-        #     _name,
-        #     ins={
-        #         "start": In(Nothing)
-        #         }
-        #     )(_main)
-
         _op = op(
             _name,
-            ins=ins,
-            out=out
+            ins=_ins,
+            out=_out
             )(_main)
-
-        # _op_def = OpDefinition(name=_op_def, input_defs=[InputDefinition("start",Nothing)], compute_fn=_op_def, output_defs=[OutputDefinition()])
-        
-        # appending the op to the list of ops
-        # _def.append(_op)
-
-        # create dependency definitions fetched from the config file
-        _dep = {}
-        # _dep = {} if dependencies[_name] is None else {
-        #     "start": MultiDependencyDefinition(
-        #         [
-        #             DependencyDefinition(f"{d}") for d in dependencies[_name]
-        #         ]
-        #     )
-        # }
-
-
-        _dep = deps
 
         return _op, _dep
