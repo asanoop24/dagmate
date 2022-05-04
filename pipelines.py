@@ -1,16 +1,18 @@
-from dagster import GraphDefinition, get_dagster_logger
+from dagster import GraphDefinition, get_dagster_logger, repository
 
 _logger = get_dagster_logger()
 
 import os
 from importlib import import_module
 
-from .utils import create_op_from_module
+from apml.utils import create_op_from_module
 
 PROJECT_NAME = "apml"
 
 
 _pipelines = [f for f in os.listdir(".") if os.path.isdir(f) and "__conf__.py" in os.listdir(f)]
+
+_jobs = []
 
 for _pipeline in _pipelines:
     _conf = import_module(f"{PROJECT_NAME}.{_pipeline}.__conf__")
@@ -27,8 +29,16 @@ for _pipeline in _pipelines:
         # importing the module and saving it into a variable _mod
         _module = import_module(f"{PROJECT_NAME}.{_pipeline}.{_name}")
 
-        _op, _dep = create_op_from_module(_name, _module, _inputs, _outputs)
-        _ops.append(_op)
-        _deps[_name] = _dep
+        _uname = f"{_pipeline}__{_name}"
 
-    _ = GraphDefinition(name=_pipeline, node_defs=_ops, dependencies=_deps).to_job()
+        _op, _dep = create_op_from_module(_name, _pipeline, _module, _inputs, _outputs)
+        _ops.append(_op)
+        _deps[_uname] = _dep
+
+    _job = GraphDefinition(name=_pipeline, node_defs=_ops, dependencies=_deps).to_job()
+    _jobs.append(_job)
+
+
+@repository
+def my_repository():
+    return _jobs
