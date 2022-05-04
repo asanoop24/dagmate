@@ -1,61 +1,63 @@
-from functools import wraps
+from importlib import import_module
+from types import FrameType, ModuleType, TracebackType
+from typing import Dict, List, Tuple, Union
 
-from typing import get_type_hints
+from dagster import (
+    DependencyDefinition,
+    In,
+    MultiDependencyDefinition,
+    Nothing,
+    OpDefinition,
+    Out,
+    get_dagster_logger,
+    op,
+)
 
-
-def factory(*args, **kwargs):
-    def inner(*args, **kwargs):
-        for a in args:
-            print(a)
-        # if name == "add":
-        #     s = 0
-        #     for a in args:
-        #         s += a
-        #     return s
-        # elif name == "multiply":
-        #     s = 1
-        #     for a in args:
-        #         s *= a
-        #     return s
-
-    return inner
+_logger = get_dagster_logger()
 
 
-class Factory:
-    def __init__(self, func_name, *func_args, **func_kwargs):
-        self.__name__ = func_name
-        self.args = func_args
-        self.kwargs = func_kwargs
+def create_op_from_module(
+    name: str, module: ModuleType, inputs: Dict, outputs: Dict
+) -> Tuple[OpDefinition, Dict[str, DependencyDefinition]]:
 
-    # def func(self, *self.args, **self.kwargs):
-    #     for a in self.args:
-    #         print(a)
+    """
+    Args:
+        name (str):
+            name of the op to be displayed in the graph
+        module (ModuleType):
+            module/script object imported from the directory
+        inputs (Dict):
+            dictionary of input dependencies as defined in config file
+        outputs (Dict):
+            dictionary of output dependencies as defined in config file
 
+    Returns:
+        a tuple with 2 objects
+        an OpDefinition object and Dict object with dependency definitions
+    """
 
-import inspect
+    # only create an op for the module if it contains a step_fn function
+    if "step_fn" in dir(module):
 
-if __name__ == "__main__":
-    a = factory("x", "y")
-    print(a)
-    print(inspect.getfullargspec(a))
+        # fetching the step_fn function from the module
+        _step_fn = module.step_fn
+        _name = name
 
-    # f = factory("func","x","y")
-    # print(dir(f))
-    # print(factory.__code__.co_argcount)
-    # print(f.__code__.co_argcount)
-    # print(func.__code__.co_argcount)
-    # print(func.__code__.co_varnames)
-    # func_names = ["f1","f2","f3"]
-    # for func_name in func_names:
-    #     func = factory(func_name)
+        # renaming the main function as the module name
+        # this will be displayed as the op name in dagit ui
+        _step_fn.__name__ = module.__name__
 
-    # f1 = Factory("f1","X","Y").func
-    # f1 = factory("f1","Y","2")
-    # f2 = factory("f2","Y","2")
-    # f3 = factory("f2","Z","3")
-    # print(f1.__name__)
-    # print(f1)
-    # print(f3)
-    # f1(1,4)
-    # f2()
-    # print(dir(f1))
+        # preparing the dictionary for ins
+        _ins = {k: In() if len(v) == 2 else In(Nothing) for k, v in inputs[_name].items()}
+        _dep = {
+            k: DependencyDefinition(v[0], v[1]) if len(v) == 2 else DependencyDefinition(v[0])
+            for k, v in inputs[_name].items()
+        }
+        _out = {v: Out() for v in outputs[_name]}
+
+        # wrapping the main function with the op decorator
+        # the current process doesn't accept any parameters
+        # and is only based on previous ops' execution
+        _op = op(_name, ins=_ins, out=_out)(_step_fn)
+
+        return _op, _dep

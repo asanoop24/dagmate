@@ -5,7 +5,7 @@ _logger = get_dagster_logger()
 import os
 from importlib import import_module
 
-from apml.pipelines.utils import create_op_from_module
+from .utils import create_op_from_module
 
 PROJECT_NAME = "apml"
 
