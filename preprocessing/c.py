@@ -1,5 +1,13 @@
+import pandas as pd
+
+from apml import _logger
+
+
 def step_fn(x1, x2):
-    print("I am C! Whats up")
+
+    df = pd.DataFrame(data=[[x1, x2], [2 * x1, 2 * x2]], columns=["AX", "BY"])
+    _logger.info(df)
+    _logger.info("I am C! Whats up")
     return 10, 20
 
 
