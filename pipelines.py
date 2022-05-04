@@ -1,4 +1,10 @@
-from dagster import GraphDefinition, get_dagster_logger, repository
+from dagster import (
+    DefaultScheduleStatus,
+    GraphDefinition,
+    ScheduleDefinition,
+    get_dagster_logger,
+    repository,
+)
 
 _logger = get_dagster_logger()
 
@@ -44,7 +50,10 @@ for _pipeline in _pipelines:
 
     # creating the job for the pipeline using the ops and dependencies generated above
     _job = GraphDefinition(name=_pipeline, node_defs=_ops, dependencies=_deps).to_job()
-    _jobs.append(_job)
+    _schedule = ScheduleDefinition(
+        job=_job, cron_schedule="*/1 * * * *", default_status=DefaultScheduleStatus.RUNNING
+    )
+    _jobs.append(_schedule)
 
 
 @repository(name=PROJECT_NAME)
