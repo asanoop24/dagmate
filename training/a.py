@@ -1,5 +1,6 @@
 def step_fn():
     print("Heello, I am a!!")
+    raise ValueError("Kuch to locha hai!!")
     return 5, 10
 
 

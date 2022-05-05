@@ -1,5 +1,4 @@
-from importlib import import_module
-from types import FrameType, ModuleType, TracebackType
+from types import ModuleType
 from typing import Dict, List, Tuple, Union
 
 from dagster import (
@@ -16,7 +15,7 @@ from dagster import (
 _logger = get_dagster_logger()
 
 
-def create_op_from_module(
+def build_op_from_module(
     name: str, pipeline: str, module: ModuleType, inputs: Dict, outputs: Dict
 ) -> Tuple[OpDefinition, Dict[str, DependencyDefinition]]:
 
@@ -55,9 +54,9 @@ def create_op_from_module(
         # preparing the dictionary for ins
         _ins = {k: In() if len(v) == 2 else In(Nothing) for k, v in inputs[_name].items()}
         _dep = {
-            k: DependencyDefinition(f"{_pipeline}__{v[0]}", v[1])
+            k: DependencyDefinition(f"{v[0]}", v[1])
             if len(v) == 2
-            else DependencyDefinition(f"{_pipeline}__{v[0]}")
+            else DependencyDefinition(f"{v[0]}")
             for k, v in inputs[_name].items()
         }
         _out = {v: Out() for v in outputs[_name]}
