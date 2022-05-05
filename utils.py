@@ -52,14 +52,14 @@ def build_op_from_module(
         _step_fn.__name__ = module.__name__
 
         # preparing the dictionary for ins
-        _ins = {k: In() if len(v) == 2 else In(Nothing) for k, v in inputs[_name].items()}
+        _ins = {k: In() if k != "start" else In(Nothing) for k, v in inputs[_name].items()}
         _dep = {
             k: DependencyDefinition(f"{v[0]}", v[1])
-            if len(v) == 2
-            else DependencyDefinition(f"{v[0]}")
+            if k != "start"
+            else MultiDependencyDefinition([DependencyDefinition(x) for x in v])
             for k, v in inputs[_name].items()
         }
-        _out = {v: Out() for v in outputs[_name]}
+        _out = {v: Out() for v in outputs[_name]} if _name in outputs.keys() else {"result": Out()}
 
         # wrapping the main function with the op decorator
         # the current process doesn't accept any parameters

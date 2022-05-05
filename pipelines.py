@@ -21,9 +21,11 @@ _SMTP_PORT = 587
 _SMTP_TYPE = "STARTTLS"  # or SSL
 
 _PROJECT_NAME = "apml"
+_DEFAULT_CRON_SCHEDULE = "*/1 * * * *"
+
+
 _utils = import_module("utils", f"{_PROJECT_NAME}")
 _op_builder = _utils.build_op_from_module
-
 
 _pipelines = [f for f in os.listdir(".") if os.path.isdir(f) and "__conf__.py" in os.listdir(f)]
 
@@ -37,6 +39,9 @@ for _pipeline in _pipelines:
     _modules = _conf.steps
     _inputs = _conf.inputs
     _outputs = _conf.outputs
+    _cron_schedule = (
+        _conf.cron_schedule if "cron_schedule" in dir(_conf) else _DEFAULT_CRON_SCHEDULE
+    )
 
     _ops = []
     _deps = {}
@@ -62,7 +67,7 @@ for _pipeline in _pipelines:
     # creating the job for the pipeline using the ops and dependencies generated above
     _job = GraphDefinition(name=_pipeline, node_defs=_ops, dependencies=_deps).to_job()
     _schedule = ScheduleDefinition(
-        job=_job, cron_schedule="*/1 * * * *", default_status=DefaultScheduleStatus.RUNNING
+        job=_job, cron_schedule=_cron_schedule, default_status=DefaultScheduleStatus.RUNNING
     )
     _schedules.append(_schedule)
 
