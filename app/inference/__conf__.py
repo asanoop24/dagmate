@@ -9,3 +9,5 @@ inputs = {
 
 
 outputs = {"a": ["x1", "x2"], "b": ["result"], "c": ["x4", "x5"], "d": ["x6"]}
+
+cron_schedule = "*/2 * * * *"

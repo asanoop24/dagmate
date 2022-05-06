@@ -1,2 +1,6 @@
 load_from:
-- python_file: pipelines.py
+  # Each entry here corresponds to a service in the docker-compose file that exposes user code.
+  - grpc_server:
+      host: svc_dagster_grpc
+      port: 4000
+      location_name: "grpc_repository_server"

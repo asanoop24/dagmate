@@ -20,13 +20,12 @@ _SMTP_HOST = "smtp.office365.com"
 _SMTP_PORT = 587
 _SMTP_TYPE = "STARTTLS"  # or SSL
 
-_PROJECT_NAME = "apml"
-_DEFAULT_CRON_SCHEDULE = "*/1 * * * *"
+_PROJECT_NAME = "app"
+_DEFAULT_CRON_SCHEDULE = "*/10 * * * *"
 
 
 _utils = import_module("utils", f"{_PROJECT_NAME}")
 _op_builder = _utils.build_op_from_module
-
 _pipelines = [f for f in os.listdir(".") if os.path.isdir(f) and "__conf__.py" in os.listdir(f)]
 
 _jobs = []
@@ -36,6 +35,7 @@ for _pipeline in _pipelines:
 
     # reading the configuration file for the pipeline and dependencies
     _conf = import_module(f"{_PROJECT_NAME}.{_pipeline}.__conf__")
+    print(_conf)
     _modules = _conf.steps
     _inputs = _conf.inputs
     _outputs = _conf.outputs
