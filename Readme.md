@@ -13,6 +13,38 @@ This repo allows the user to run their ETL, ML workflows in `dagster` without ac
 
 <br>
 
+# Instructions
+
+To run the sample workflow given in the repo, execute the following:
+
+- `cd` into the root directory where you have the `docker-compose.yml`.
+    ```
+    cd PATH/TO/ROOT
+    ```
+- build the docker image using `docker-compose`
+    ```
+    docker-compose build
+    ```
+- start the containers once the images are downloaded and built
+    ```
+    docker-compose up -d
+    ```
+- check to see if the docker containers are running
+    ```
+    docker ps -a
+    ```
+    You should see the following 4 containers running:
+```
+CONTAINER ID   IMAGE                  COMMAND                  CREATED       STATUS       PORTS                    NAMES
+ddcad72ae0ca   img_dagster_instance   "dagit -h 0.0.0.0 -p…"   2 hours ago   Up 2 hours   0.0.0.0:3000->3000/tcp   ctr_dagster_dagit
+23e405c38f43   img_dagster_instance   "dagster-daemon run"     2 hours ago   Up 2 hours                            ctr_dagster_daemon
+71d3214ac898   postgres:11            "docker-entrypoint.s…"   2 hours ago   Up 2 hours   5432/tcp                 ctr_postgresql
+6f32bcf735bd   img_dagster_grpc       "dagster api grpc -h…"   2 hours ago   Up 2 hours   4000/tcp                 ctr_dagster_grpc
+```
+
+
+<br>
+
 # Things to keep in mind
 
 <br>
