@@ -1,0 +1,82 @@
+project: app
+workflows:
+  - name: training
+    steps:
+      - name: a
+        input: null
+        output:
+          - x1
+          - x2
+      - name: b
+        input: null
+        output: null
+      - name: c
+        input:
+          - type: var
+            name: x1
+            source:
+              step: a
+              var: x1
+          - type: var
+            name: x2
+            source:
+              step: a
+              var: x2
+          - type: start
+            name: start
+            source:
+              step:
+                - b
+        output:
+          - x4
+          - x5
+      - name: d
+        input:
+          - type: var
+            name: x5
+            source:
+              step: c
+              var: x4
+        output:
+          - x6
+    cron: "*/1 * * * *"
+  - name: inference
+    steps:
+      - name: a
+        input: null
+        output:
+          - x1
+          - x2
+      - name: b
+        input: null
+        output: null
+      - name: c
+        input:
+          - type: var
+            name: x1
+            source:
+              step: a
+              var: x1
+          - type: var
+            name: x2
+            source:
+              step: a
+              var: x2
+          - type: start
+            name: start
+            source:
+              step:
+                - b
+        output:
+          - x4
+          - x5
+      - name: d
+        input:
+          - type: var
+            name: x5
+            source:
+              step: c
+              var: x4
+        output:
+          - x6
+    cron: "*/1 * * * *"
