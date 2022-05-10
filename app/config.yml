@@ -39,7 +39,7 @@ workflows:
               var: x4
         output:
           - x6
-    cron: "*/1 * * * *"
+    schedule: "*/1 * * * *"
   - name: inference
     steps:
       - name: a
@@ -79,4 +79,4 @@ workflows:
               var: x4
         output:
           - x6
-    cron: "*/1 * * * *"
+    schedule: "*/1 * * * *"
