@@ -18,7 +18,6 @@ from dagster import (
     op,
     repository,
 )
-from matplotlib.pyplot import get
 
 _logger = get_dagster_logger()
 
