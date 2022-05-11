@@ -1,5 +1,4 @@
 import inspect
-from importlib import import_module
 from types import ModuleType
 from typing import Dict, List, Tuple, Union
 
@@ -14,16 +13,20 @@ from dagster import (
     Nothing,
     OpDefinition,
     Out,
+    RepositoryDefinition,
     get_dagster_logger,
     op,
     repository,
 )
+
+from app.utils import import_module_from_file
 
 _logger = get_dagster_logger()
 
 
 class Dagger:
     def __init__(self, config: Union[Dict, str]):
+
         self._conf = yaml.load(open(config), yaml.Loader) if isinstance(config, str) else config
         self._ins = {}
         self._outs = {}
@@ -37,21 +40,32 @@ class Dagger:
         self._main = None
 
     def activate(self):
+
+        """
+        builds everything to be plugged into dagit ui
+        from the config.yml
+        """
+
         # frame and module from which the activate function is being called
         # ideally this would be the file passed as an arg to dagit -f <file> command
         self._mainframe = inspect.stack()[1][0]
         self._main = inspect.getmodule(self._mainframe)
 
+        # building input params, output params, step functions and dependencies
+        # required for ops, graphs and jobs
         self._ins = self._build_input_defs()
         self._outs = self._build_output_defs()
         self._step_fns = self._load_modules()
         self._deps = self._build_dependency_defs()
 
+        # building op definitions, graph definitions and job defnitions
         self._ops = self._build_op_defs(self._ins, self._outs, self._step_fns)
         self._graphs = self._build_graph_defs(self._ops, self._deps)
         self._jobs = self._build_job_defs(self._graphs)
 
+        # building repositories for each workflow
         self._repos = self._build_repository_defs(self._jobs)
+        # print(self._repos)
 
     def _build_input_defs(self) -> Dict:
 
@@ -63,10 +77,10 @@ class Dagger:
         _ins = {
             _workflow["name"]: {
                 _step["name"]: {
-                    _input["name"]: In() if _input["type"] == "var" else In(Nothing)
-                    for _input in _step["input"]
+                    _input["name"]: In() if _input["type"] == "param" else In(Nothing)
+                    for _input in _step["dependencies"]
                 }
-                if _step["input"] is not None
+                if _step["dependencies"] is not None
                 else {}
                 for _step in _workflow["steps"]
             }
@@ -75,13 +89,16 @@ class Dagger:
 
         return _ins
 
-    def _build_output_defs(self) -> Dict:
+    def _build_output_defs(self) -> Dict[str, Dict]:
+        """
+        builds output definitions for the op
+        """
 
         _conf = self._conf
         _outs = {
             _workflow["name"]: {
-                _step["name"]: {_output: Out() for _output in _step["output"]}
-                if _step["output"] is not None
+                _step["name"]: {_output: Out() for _output in _step["return"]}
+                if _step["return"] is not None
                 else {"result": Out()}
                 for _step in _workflow["steps"]
             }
@@ -90,14 +107,13 @@ class Dagger:
 
         return _outs
 
-    def _load_modules(self) -> Dict:
+    def _load_modules(self) -> Dict[str, Dict[str, ModuleType]]:
 
         _conf = self._conf
+
         _modules = {
             _workflow["name"]: {
-                _step["name"]: import_module(
-                    f'{_conf["project"]}.{_workflow["name"]}.{_step["name"]}'
-                )
+                _step["name"]: import_module_from_file(f'{_step["module"]}')
                 for _step in _workflow["steps"]
             }
             for _workflow in _conf["workflows"]
@@ -107,11 +123,7 @@ class Dagger:
         for _workflow in _conf["workflows"]:
             _step_fns[_workflow["name"]] = {}
             for _step in _workflow["steps"]:
-                _step_fn = (
-                    _modules[_workflow["name"]][_step["name"]].step_fn
-                    if "step_fn" in dir(_modules[_workflow["name"]][_step["name"]])
-                    else None
-                )
+                _step_fn = getattr(_modules[_workflow["name"]][_step["name"]], _step["function"])
                 _step_fn.__qualname__ = _step["name"]
                 _step_fn.__name__ = _step["name"]
                 _step_fns[_workflow["name"]][_step["name"]] = _step_fn
@@ -149,15 +161,15 @@ class Dagger:
             _workflow["name"]: {
                 NodeInvocation(f'__{_workflow["name"]}__{_step["name"]}', _step["name"]): {
                     _input["name"]: DependencyDefinition(
-                        _input["source"]["step"], _input["source"]["var"]
+                        _input["source"]["step"], _input["source"]["param"]
                     )
-                    if _input["type"] == "var"
+                    if _input["type"] == "param"
                     else MultiDependencyDefinition(
                         [DependencyDefinition(x, "result") for x in _input["source"]["step"]]
                     )
-                    for _input in _step["input"]
+                    for _input in _step["dependencies"]
                 }
-                if _step["input"] is not None
+                if _step["dependencies"] is not None
                 else {}
                 for _step in _workflow["steps"]
             }
@@ -206,7 +218,9 @@ class Dagger:
 
     #     return _jobs
 
-    def _build_repository_defs(self, job_defs: Dict[str, JobDefinition]):
+    def _build_repository_defs(
+        self, job_defs: Dict[str, JobDefinition]
+    ) -> Dict[str, RepositoryDefinition]:
 
         _conf = self._conf
         _jobs = job_defs

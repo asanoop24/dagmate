@@ -3,80 +3,96 @@ workflows:
   - name: training
     steps:
       - name: a
-        input: null
-        output:
+        module: ./training/a.py
+        function: step_fn
+        dependencies: null
+        return:
           - x1
           - x2
       - name: b
-        input: null
-        output: null
+        module: ./training/b.py
+        function: step_fn
+        dependencies: null
+        return: null
       - name: c
-        input:
-          - type: var
+        module: ./training/c.py
+        function: step_fn
+        dependencies:
+          - type: param
             name: x1
             source:
               step: a
-              var: x1
-          - type: var
+              param: x1
+          - type: param
             name: x2
             source:
               step: a
-              var: x2
-          - type: start
+              param: x2
+          - type: order
             name: start
             source:
               step:
                 - b
-        output:
+        return:
           - x4
           - x5
       - name: d
-        input:
-          - type: var
+        module: ./training/d.py
+        function: step_fn
+        dependencies:
+          - type: param
             name: x5
             source:
               step: c
-              var: x4
-        output:
+              param: x4
+        return:
           - x6
     schedule: "*/1 * * * *"
   - name: inference
     steps:
       - name: a
-        input: null
-        output:
+        module: ./inference/a.py
+        function: step_fn
+        dependencies: null
+        return:
           - x1
           - x2
       - name: b
-        input: null
-        output: null
+        module: ./inference/b.py
+        function: step_fn
+        dependencies: null
+        return: null
       - name: c
-        input:
-          - type: var
+        module: ./inference/c.py
+        function: step_fn
+        dependencies:
+          - type: param
             name: x1
             source:
               step: a
-              var: x1
-          - type: var
+              param: x1
+          - type: param
             name: x2
             source:
               step: a
-              var: x2
-          - type: start
+              param: x2
+          - type: order
             name: start
             source:
               step:
                 - b
-        output:
+        return:
           - x4
           - x5
       - name: d
-        input:
-          - type: var
+        module: ./inference/d.py
+        function: step_fn
+        dependencies:
+          - type: param
             name: x5
             source:
               step: c
-              var: x4
-        output:
+              param: x4
+        return:
           - x6
     schedule: "*/1 * * * *"
