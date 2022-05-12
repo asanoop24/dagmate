@@ -252,7 +252,12 @@ class Dagger:
                     )
                     if _input["type"] == "param"
                     else MultiDependencyDefinition(
-                        [DependencyDefinition(x, "result") for x in _input["source"]["step"]]
+                        [
+                            DependencyDefinition(
+                                x, list(self.output_defs[_workflow["name"]][x].keys())[-1]
+                            )
+                            for x in _input["source"]["step"]
+                        ]
                     )
                     for _input in _step["dependencies"]
                 }
