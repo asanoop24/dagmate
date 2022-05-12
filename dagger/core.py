@@ -25,7 +25,7 @@ from dagster import (
     repository,
 )
 
-from app.utils import import_module_from_file
+from dagger.utils import import_module_from_file, load_yaml, validate_file_location
 
 _logger = get_dagster_logger()
 
@@ -53,35 +53,10 @@ class Dagger:
             config
         ), "Either `config_file` or `config` should be provided"
         if config_file:
-            Dagger._validate_config_filepath(config_file=config_file)
-            self.config: Dict[str, Any] = Dagger._load_config(config_file=config_file)
+            validate_file_location(filepath=config_file)
+            self.config: Dict[str, Any] = load_yaml(filepath=config_file)
         if config:
             self.config: Dict[str, Any] = config
-
-    @staticmethod
-    def _validate_config_filepath(config_file: str) -> None:
-        """
-        Validates config file is available at the given path
-        """
-        if not os.path.exists(config_file):
-            raise FileNotFoundError(f"DAGger could not find the file {config_file}")
-            # raise Exception("DAGger `config_file` could not be found")
-
-    @staticmethod
-    def _load_config(config_file: str) -> Dict[str, Any]:
-        """
-        Loads YAML config file to dictionary
-        :returns: dict from YAML config file
-        """
-        # pylint: disable=consider-using-with
-        try:
-            config = yaml.load(
-                stream=open(config_file, "r", encoding="utf-8"),
-                Loader=yaml.FullLoader,
-            )
-        except Exception as err:
-            raise Exception("Invalid DAGger config file") from err
-        return config
 
     @staticmethod
     def _validate_config(config: str) -> None:
@@ -111,7 +86,7 @@ class Dagger:
         self._build_input_defs()
         self._build_output_defs()
         self._load_modules()
-        self._load_step_fns()
+        self._load_step_fns()  # depends on loaded modules
         self._build_dependency_defs()
 
         # building op definitions, graph definitions and job defnitions

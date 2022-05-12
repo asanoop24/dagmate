@@ -1,24 +1,24 @@
-project: app
+project: MLDeploy
 workflows:
   - name: training
     steps:
       - name: a
-        module: ./training/a.py
+        module: ./ml/training/a.py
         function: step_fn
         dependencies: null
         return:
           - x1
           - x2
       - name: b
-        module: ./training/b.py
+        module: ./ml/training/b.py
         function: step_fn
         dependencies: null
         return: null
       - name: c
-        module: ./training/c.py
+        module: ./ml/training/c.py
         function: step_fn
         dependencies:
-          - type: param    # or order
+          - type: param
             name: x1
             source:
               step: a
@@ -37,7 +37,7 @@ workflows:
           - x4
           - x5
       - name: d
-        module: ./training/d.py
+        module: ./ml/training/d.py
         function: step_fn
         dependencies:
           - type: param
@@ -51,19 +51,19 @@ workflows:
   - name: inference
     steps:
       - name: a
-        module: ./inference/a.py
+        module: ./ml/inference/a.py
         function: step_fn
         dependencies: null
         return:
           - x1
           - x2
       - name: b
-        module: ./inference/b.py
+        module: ./ml/inference/b.py
         function: step_fn
         dependencies: null
         return: null
       - name: c
-        module: ./inference/c.py
+        module: ./ml/inference/c.py
         function: step_fn
         dependencies:
           - type: param
@@ -85,7 +85,7 @@ workflows:
           - x4
           - x5
       - name: d
-        module: ./inference/d.py
+        module: ./ml/inference/d.py
         function: step_fn
         dependencies:
           - type: param

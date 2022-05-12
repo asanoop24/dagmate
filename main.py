@@ -1,4 +1,4 @@
-from dagger import Dagger
+from dagger.core import Dagger
 
 config_file = "./config.yml"
 
