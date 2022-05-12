@@ -53,8 +53,7 @@ workflows:
           - x5
       # step d executes the function step_fn in module located at ./ml/training/d.py
       # it has 1 parameter-based dependency (x5) which is sourced from output parameter x4 of step c
-      # parameter x1 is sourced from output parameter x1 of step a
-      # parameter x2 is sourced from output parameter x2 of step a
+      # parameter x5 is sourced from output parameter x4 of step c
       # the third dependency is order-based i.e. it depends on the completion of step b
       # it returns 1 output -> x6
       - name: d
@@ -71,7 +70,7 @@ workflows:
     schedule: "*/5 * * * *"
 
   # inference workflow
-  # it has 4 steps - a, b, c and d
+  # it has 3 steps - a, b and c
   # it is scheduled to run every 20 minutes
   - name: inference
     steps:
@@ -109,15 +108,4 @@ workflows:
         return:
           - x4
           - x5
-      - name: d
-        module: ./ml/inference/d.py
-        function: step_fn
-        dependencies:
-          - type: param
-            name: x5
-            source:
-              step: c
-              param: x4
-        return:
-          - x6
     schedule: "*/20 * * * *"
