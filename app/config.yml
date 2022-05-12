@@ -18,7 +18,7 @@ workflows:
         module: ./training/c.py
         function: step_fn
         dependencies:
-          - type: param
+          - type: param    # or order
             name: x1
             source:
               step: a

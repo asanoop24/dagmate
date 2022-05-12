@@ -1,9 +1,13 @@
 import inspect
+import os
+from pyclbr import Function
 from types import ModuleType
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import yaml
 from dagster import (
+    DagsterType,
+    DefaultScheduleStatus,
     DependencyDefinition,
     GraphDefinition,
     In,
@@ -12,8 +16,10 @@ from dagster import (
     NodeInvocation,
     Nothing,
     OpDefinition,
+    Optional,
     Out,
     RepositoryDefinition,
+    ScheduleDefinition,
     get_dagster_logger,
     op,
     repository,
@@ -24,26 +30,75 @@ from app.utils import import_module_from_file
 _logger = get_dagster_logger()
 
 
+VALID_YAML_OVERALL_ATTRIBUTES = ["project", "workflows"]
+VALID_YAML_WORKFLOW_ATTRIBUTES = ["name", "steps", "schedule"]
+VALID_YAML_STEP_ATTRIBUTES = ["name", "module", "function", "dependencies", "return"]
+VALID_YAML_DEPENDENCY_ATTRIBUTES = ["type", "name", "source"]
+VALID_YAML_SOURCE_ATTRIBUTES = ["step", "param"]
+
+
 class Dagger:
-    def __init__(self, config: Union[Dict, str]):
+    """
+    Takes a YAML config or a python dictionary and generates DAGs.
+    :param config_filepath: the filepath of the DAG factory YAML config file.
+        Must be absolute path to file. Cannot be used with `config`.
+    :type config_file: str
+    :param config: DAGger config dictionary. Cannot be user with `config_file`.
+    :type config: dict
+    """
 
-        self._conf = yaml.load(open(config), yaml.Loader) if isinstance(config, str) else config
-        self._ins = {}
-        self._outs = {}
-        self._deps = {}
-        self._deps = {}
-        self._modules = {}
-        self._step_fns = {}
-        self._repos = {}
+    def __init__(self, config_file: Optional[str] = None, config: Optional[dict] = None) -> None:
 
-        self._mainframe = None
-        self._main = None
+        assert bool(config_file) ^ bool(
+            config
+        ), "Either `config_file` or `config` should be provided"
+        if config_file:
+            Dagger._validate_config_filepath(config_file=config_file)
+            self.config: Dict[str, Any] = Dagger._load_config(config_file=config_file)
+        if config:
+            self.config: Dict[str, Any] = config
+
+    @staticmethod
+    def _validate_config_filepath(config_file: str) -> None:
+        """
+        Validates config file is available at the given path
+        """
+        if not os.path.exists(config_file):
+            raise FileNotFoundError(f"DAGger could not find the file {config_file}")
+            # raise Exception("DAGger `config_file` could not be found")
+
+    @staticmethod
+    def _load_config(config_file: str) -> Dict[str, Any]:
+        """
+        Loads YAML config file to dictionary
+        :returns: dict from YAML config file
+        """
+        # pylint: disable=consider-using-with
+        try:
+            config = yaml.load(
+                stream=open(config_file, "r", encoding="utf-8"),
+                Loader=yaml.FullLoader,
+            )
+        except Exception as err:
+            raise Exception("Invalid DAGger config file") from err
+        return config
+
+    @staticmethod
+    def _validate_config(config: str) -> None:
+        """
+        Validates config file path is absolute
+        """
+        if not os.path.exists(config):
+            raise Exception("DAGger `config` must be absolute path")
 
     def activate(self):
-
         """
-        builds everything to be plugged into dagit ui
-        from the config.yml
+        activates DAGger and uses the loaded config to
+            build input and output definitions for ops
+            build op and dependency definitions from inputs and outputs
+            build graph and job definitions
+            build repository definitions from jobs
+            load repositories in the globals() dict of the mainframe module
         """
 
         # frame and module from which the activate function is being called
@@ -53,27 +108,33 @@ class Dagger:
 
         # building input params, output params, step functions and dependencies
         # required for ops, graphs and jobs
-        self._ins = self._build_input_defs()
-        self._outs = self._build_output_defs()
-        self._step_fns = self._load_modules()
-        self._deps = self._build_dependency_defs()
+        self._build_input_defs()
+        self._build_output_defs()
+        self._load_modules()
+        self._load_step_fns()
+        self._build_dependency_defs()
 
         # building op definitions, graph definitions and job defnitions
-        self._ops = self._build_op_defs(self._ins, self._outs, self._step_fns)
-        self._graphs = self._build_graph_defs(self._ops, self._deps)
-        self._jobs = self._build_job_defs(self._graphs)
+        self._build_op_defs()  # depends on input_defs and output_defs
+        self._build_graph_defs()  # depends on input_defs and output_defs
+        self._build_job_defs()  # depends on input_defs and output_defs
+        self._build_schedule_defs()  # depends on input_defs and output_defs
 
         # building repositories for each workflow
-        self._repos = self._build_repository_defs(self._jobs)
-        # print(self._repos)
+        self._build_repository_defs()
 
-    def _build_input_defs(self) -> Dict:
-
+    def _build_input_defs(self) -> None:
         """
-        builds input definitions for the op
-        """
+        builds input definitions for the op that are
+        passed in @op decorator while defining the op
 
-        _conf = self._conf
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _ins: Dict[str,Dict[str,Union[None,Dict[str,DagsterType]]]] ->
+            a nested dictionary for input definitions for each op in each workflow
+        """
+        _conf = self.config
         _ins = {
             _workflow["name"]: {
                 _step["name"]: {
@@ -87,14 +148,21 @@ class Dagger:
             for _workflow in _conf["workflows"]
         }
 
-        return _ins
+        self.input_defs = _ins
+        # return _ins
 
-    def _build_output_defs(self) -> Dict[str, Dict]:
+    def _build_output_defs(self) -> None:
         """
-        builds output definitions for the op
-        """
+        builds output definitions for the op that are
+        passed in @op decorator while defining the op
 
-        _conf = self._conf
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _outs: Dict[str,Union[None,Dict[str,DagsterType]]] ->
+            a nested dictionary for output definitions for each op in each workflow
+        """
+        _conf = self.config
         _outs = {
             _workflow["name"]: {
                 _step["name"]: {_output: Out() for _output in _step["return"]}
@@ -105,11 +173,21 @@ class Dagger:
             for _workflow in _conf["workflows"]
         }
 
-        return _outs
+        self.output_defs = _outs
+        # return _outs
 
-    def _load_modules(self) -> Dict[str, Dict[str, ModuleType]]:
+    def _load_modules(self) -> None:
+        """
+        loads the module in which the function to be executed for
+        the op resides
 
-        _conf = self._conf
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _modules: Dict[str,Dict[str,ModuleType]] ->
+            a nested dictionary for loaded modules for each op in each workflow
+        """
+        _conf = self.config
 
         _modules = {
             _workflow["name"]: {
@@ -118,6 +196,23 @@ class Dagger:
             }
             for _workflow in _conf["workflows"]
         }
+
+        self.modules = _modules
+        # return _modules
+
+    def _load_step_fns(self) -> Dict[str, Dict[str, Function]]:
+        """
+        loads the module in which the function to be executed for
+        the op resides
+
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _modules: Dict[str,Dict[str,ModuleType]] ->
+            a nested dictionary for loaded modules for each op in each workflow
+        """
+        _conf = self.config
+        _modules = self.modules
 
         _step_fns = {}
         for _workflow in _conf["workflows"]:
@@ -128,16 +223,24 @@ class Dagger:
                 _step_fn.__name__ = _step["name"]
                 _step_fns[_workflow["name"]][_step["name"]] = _step_fn
 
-        return _step_fns
+        self.step_fns = _step_fns
+        # return _step_fns
 
-    def _build_op_defs(
-        self, input_defs: Dict, output_defs: Dict, step_fns: Dict
-    ) -> Tuple[OpDefinition, Dict[str, DependencyDefinition]]:
+    def _build_op_defs(self) -> None:
+        """
+        loads the module in which the function to be executed for
+        the op resides
 
-        _conf = self._conf
-        _step_fns = step_fns
-        _ins = input_defs
-        _outs = output_defs
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _modules: Dict[str,Dict[str,ModuleType]] ->
+            a nested dictionary for loaded modules for each op in each workflow
+        """
+        _conf = self.config
+        _step_fns = self.step_fns
+        _ins = self.input_defs
+        _outs = self.output_defs
 
         _ops = {
             _workflow["name"]: {
@@ -151,11 +254,20 @@ class Dagger:
             for _workflow in _conf["workflows"]
         }
 
-        return _ops
+        self.op_defs = _ops
+        # return _ops
 
     def _build_dependency_defs(self) -> Dict:
+        """
+        builds the dependency definitions and mapping of params between ops
 
-        _conf = self._conf
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _modules: Dict[str,Dict[str,ModuleType]] ->
+            a nested dictionary for dependency definitions for each op in each workflow
+        """
+        _conf = self.config
 
         _deps = {
             _workflow["name"]: {
@@ -176,13 +288,22 @@ class Dagger:
             for _workflow in _conf["workflows"]
         }
 
-        return _deps
+        self.dependency_defs: Dict = _deps
+        # return _deps
 
-    def _build_graph_defs(self, op_defs: Dict, dep_defs: Dict):
+    def _build_graph_defs(self) -> None:
+        """
+        builds the graph definitions with ops as nodes and dependencies as edges
 
-        _conf = self._conf
-        _ops = op_defs
-        _deps = dep_defs
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _modules: Dict[str,GraphDefinition] ->
+            a dictionary for graph definitions for each job
+        """
+        _conf = self.config
+        _ops = self.op_defs
+        _deps = self.dependency_defs
 
         _graphs = {
             _workflow["name"]: GraphDefinition(
@@ -193,53 +314,87 @@ class Dagger:
             for _workflow in _conf["workflows"]
         }
 
-        return _graphs
+        self.graph_defs = _graphs
+        # return _graphs
 
-    def _build_job_defs(self, graph_defs: Dict):
+    def _build_job_defs(self):
+        """
+        builds the job definitions to be loaded into the repositories
 
-        _conf = self._conf
-        _graphs = graph_defs
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _modules: Dict[str,JobDefinition] ->
+            a dictionary for jobs for each workflow in the project
+        """
+        _conf = self.config
+        _graphs = self.graph_defs
 
         _jobs = {
             _workflow["name"]: _graphs[_workflow["name"]].to_job()
             for _workflow in _conf["workflows"]
         }
 
-        return _jobs
+        self.job_defs = _jobs
+        # return _jobs
 
-    # def _build_schedule_defs(config: Dict, graph_defs: Dict):
+    def _build_schedule_defs(self):
+        """
+        builds the schedule definitions at which the jobs need to be executed
 
-    #     _conf = config
-    #     _graphs = graph_defs
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _modules: Dict[str,ScheduleDefinition] ->
+            a dictionary for loaded modules for each workfllow in the project
+        """
+        _conf = self.config
+        _jobs = self.job_defs
 
-    #     _jobs = {
-    #         _workflow["name"]: _graphs[_workflow["name"]].to_job() for _workflow in _conf["workflows"]
-    #     }
+        _schedules = {
+            _workflow["name"]: ScheduleDefinition(
+                job=_jobs[_workflow["name"]],
+                cron_schedule=_workflow["schedule"],
+                default_status=DefaultScheduleStatus.RUNNING,
+            )
+            for _workflow in _conf["workflows"]
+        }
 
-    #     return _jobs
+        self.schedule_defs = _schedules
+        # return _schedules
 
-    def _build_repository_defs(
-        self, job_defs: Dict[str, JobDefinition]
-    ) -> Dict[str, RepositoryDefinition]:
+    def _build_repository_defs(self) -> None:
+        """
+        builds the repositories and loads them in the globals() namespace
+        of the mainframe module from which the grpc server loads
 
-        _conf = self._conf
-        _jobs = job_defs
+        :params
+            self: Dagger -> an instance of class Dagger
+        :returns
+            _repos: Dict[str,RepositoryDefinition]] ->
+            a dictionary for loaded repositories for each workflow
+        """
+        _conf = self.config
+        _jobs = self.job_defs
+        _schedules = self.schedule_defs
 
         _repos = {}
         # _g = globals()
         for _workflow in _conf["workflows"]:
+            _workflow_name = _workflow["name"]
 
-            @repository(name=_workflow["name"])
+            @repository(name=_workflow_name)
             def _repo():
-                return [_jobs[_workflow["name"]]]
+                return [_jobs[_workflow_name]] + [_schedules[_workflow_name]]
 
-            _repo.__name__ = _workflow["name"]
-            _repo.__qualname__ = _workflow["name"]
+            _repo.__name__ = _workflow_name
+            _repo.__qualname__ = _workflow_name
 
-            # _g[f'__repository__{_workflow["name"]}'] = _repo
-            _repos[_workflow["name"]] = _repo
+            # _g[f'__repository__{_workflow_name}'] = _repo
+            _repos[_workflow_name] = _repo
 
-            self._mainframe.f_globals[f'__repository__{_workflow["name"]}'] = _repo
-            setattr(self._main, f'__repository__{_workflow["name"]}', _repo)
+            self._mainframe.f_globals[f"__repository__{_workflow_name}"] = _repo
+            setattr(self._main, f"__repository__{_workflow_name}", _repo)
 
-        return _repos
+        self.repository_defs: Dict[str, RepositoryDefinition] = _repos
+        # return _repos
