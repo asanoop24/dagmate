@@ -81,6 +81,12 @@ class Dagger:
         self._mainframe = inspect.stack()[1][0]
         self._main = inspect.getmodule(self._mainframe)
 
+        for frame in inspect.stack():
+            print(frame.frame)
+
+        print(self._mainframe)
+        print(self._main)
+
         # building input params, output params, step functions and dependencies
         # required for ops, graphs and jobs
         self._build_input_defs()

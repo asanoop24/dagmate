@@ -1,0 +1,30 @@
+FROM python:3.7-slim
+
+# Checkout and install dagster libraries needed to run the gRPC server
+# exposing your repository to dagit and dagster-daemon, and to load the DagsterInstance
+
+RUN pip install \
+    dagster \
+    dagster-postgres \
+    dagster-docker
+
+
+WORKDIR /opt/dagster
+
+# Add repository code
+COPY ml/ /opt/dagster/ml
+COPY conf/ /opt/dagster/conf
+COPY dagger/ /opt/dagster/dagger
+COPY grpc_server.py /opt/dagster
+COPY requirements.txt /opt/dagster/
+
+# RUN pip install -r requirements.txt
+
+# Run dagster gRPC server on port 4000
+EXPOSE 4000
+
+ENV PYTHONPATH=/opt/dagster
+ENV CONFDIR=/opt/dagster/conf
+# CMD allows this to be overridden from run launchers or executors that want
+# to run other commands against your repository
+CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "grpc_server.py"]
