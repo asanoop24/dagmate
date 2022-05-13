@@ -1,6 +1,6 @@
 from dagger.core import Dagger
 
-config_file = "./config.yml"
+config_file = "./conf/config.yml"
 
 dagger = Dagger(config_file)
 dagger.activate()

@@ -7,30 +7,30 @@ workflows:
   # it is scheduled to run every 5 minutes
   - name: training
     steps:
-      # step a executes the function step_fn in module located at ./ml/training/a.py
+      # step a executes the function step_fn in module located at ./src/training/a.py
       # it has no dependencies and returns 2 outputs -> x1, x2
       - name: a
-        module: ./ml/training/a.py
+        module: ./src/training/a.py
         function: step_fn
         dependencies: null
         return:
           - x1
           - x2
-      # step b executes the function step_fn in module located at ./ml/training/b.py
+      # step b executes the function step_fn in module located at ./src/training/b.py
       # it has no dependencies and returns no outputs
       - name: b
-        module: ./ml/training/b.py
+        module: ./src/training/b.py
         function: step_fn
         dependencies: null
         return: null
-      # step c executes the function step_fn in module located at ./ml/training/c.py
+      # step c executes the function step_fn in module located at ./src/training/c.py
       # it has 3 dependencies, 2 parameter-based (x1 and x2) and 1 order-based.
       # parameter x1 is sourced from output parameter x1 of step a
       # parameter x2 is sourced from output parameter x2 of step a
       # the third dependency is order-based i.e. it depends on the completion of step b
       # it returns 2 outputs -> x4 and x5
       - name: c
-        module: ./ml/training/c.py
+        module: ./src/training/c.py
         function: step_fn
         dependencies:
           - type: param
@@ -51,13 +51,13 @@ workflows:
         return:
           - x4
           - x5
-      # step d executes the function step_fn in module located at ./ml/training/d.py
+      # step d executes the function step_fn in module located at ./src/training/d.py
       # it has 1 parameter-based dependency (x5) which is sourced from output parameter x4 of step c
       # parameter x5 is sourced from output parameter x4 of step c
       # the third dependency is order-based i.e. it depends on the completion of step b
       # it returns 1 output -> x6
       - name: d
-        module: ./ml/training/d.py
+        module: ./src/training/d.py
         function: step_fn
         dependencies:
           - type: param
@@ -75,19 +75,19 @@ workflows:
   - name: inference
     steps:
       - name: a
-        module: ./ml/inference/a.py
+        module: ./src/inference/a.py
         function: step_fn
         dependencies: null
         return:
           - x1
           - x2
       - name: b
-        module: ./ml/inference/b.py
+        module: ./src/inference/b.py
         function: step_fn
         dependencies: null
         return: null
       - name: c
-        module: ./ml/inference/c.py
+        module: ./src/inference/c.py
         function: step_fn
         dependencies:
           - type: param

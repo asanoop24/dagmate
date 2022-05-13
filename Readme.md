@@ -1,4 +1,6 @@
-# Dagger
+# DAGger
+
+### Make your **dagster** deployment easier with **dagger**.
 
 <br>
 
@@ -14,12 +16,16 @@ To run the workflow with sample `config.yml` given in the repo, execute the foll
 
 - Clone the repo in your local machine.
 - Install the requirements given in `requirements.txt` preferably in a virtual environment.
-- Run the following command
+- Run the following command to start `dagit` which will load the workflow. You can then access the dagit UI by accessing the following url - [localhost:3000](http://127.0.0.1:3000)
 
     ```
     dagit -f main.py
     ```
+- [Optional] To use the scheduling and emailing featuers, you'll need to run the `dagster-daemon` in parallel to `dagit`
 
+    ```
+    dagster-daemon run -f main.py
+    ```
 
 
 <br>
@@ -28,25 +34,21 @@ To run the workflow with sample `config.yml` given in the repo, execute the foll
 
 <br>
 
-### **Wrap the body of each step inside `step_fn`**
+- Every step in the workflow needs to wrapped inside a function and the name of that function needs to be provided in the YAML file under the attribute `function`
 
 <br>
 
-### **Names for parameters, files, folders should be consistent with `config.yml`**
+- All the names used need to be consistent with the attribute values provided in the YAML file. This includes the names of function parameters, functions and the modules in which functions reside.
 
 <br>
 
-User will need to pass a `config.yml` in order to provide information around the various workflows, steps and their dependencies. Here's the structure/attributes of `config.yml`.
+- You'll only need to make changes to the following files/folders:
+    - `conf` - Place all your YAML files here. Each YAML file will be loaded as a separate project in the setup.
+    - `src` - Place all your code files here. You can follow any folder structure and names you want, as long as you provide the same names in the YAML file.
+    - `requirements.txt` - Add any packages/modules that you'd require
 
-- **project** - Name of the ML/ETL project. Should be the same as folder name. (`app` in this case)
+<br>
 
-- **workflows** - Different workflows/pipelines in the project such as *extraction*, *training*,  *preprocessing*, *inference*
+- To understand the YAML file's structure and attributes, refer to the sample file `config.yml` inside the `conf` directory. It contains comments explaining the different attributes and their expected values.
 
-- **steps** - Different steps in a workflow. For example, in a *training* workflow, steps could be *load_data*, *split_data*, *categorical_encoding*, *train_model*, *tune_model*
-
-    - **input** - Every step needs an *input* attribute. If a step as no input, then its value will be *null*. If the input parameters of a step depends on return value from another step, the mapping needs to be provided in config. In the sample config, steps `a` and `b` don't have any dependency on other steps and therefore `input` attribute is `null` for both of them. However, the input parameter for step `d` depends on the return value of step `c` i.e. input parameter `x5` of `d` is sourced from the output paramter `x4` of `c`. A step can have non-parameteric dependency on other steps as well such as order-based dependency. In the sample config, the start of step `c` depends on the completion of step `b`. This type of dependence is provided using the attribute `type: order` whereas a paramteric dependecy is provided using the attribute `type: param`.
-
-    - **output** - Every step needs an *output* attribute. If a step as no output, then its value will be *null*. Multiple outputs should be provided in a list format.
-
-
-- **schedule** - This is not applicable in the basic deployment.
+<br>
