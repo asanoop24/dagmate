@@ -12,7 +12,7 @@ RUN pip install \
 WORKDIR /opt/dagster
 
 # Add repository code
-COPY ml/ /opt/dagster/ml
+COPY src/ /opt/dagster/src
 COPY conf/ /opt/dagster/conf
 COPY dagger/ /opt/dagster/dagger
 COPY grpc_server.py /opt/dagster
