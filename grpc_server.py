@@ -3,7 +3,7 @@ import os
 from dagger.core import Dagger
 from dagger.utils import load_yaml
 
-config_dir = os.environ["CONFDIR"]
+config_dir = os.environ["CONFDIR"] if "CONFDIR" in os.environ.keys() else "./conf"
 # config_file = "./conf/config.yml"
 
 config = {}
