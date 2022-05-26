@@ -25,7 +25,7 @@ from dagster import (
     repository,
 )
 
-from dagger.utils import import_module_from_file, load_yaml, validate_file_location
+from dagmate.utils import import_module_from_file, load_yaml, validate_file_location
 
 _logger = get_dagster_logger()
 
@@ -37,13 +37,13 @@ VALID_YAML_DEPENDENCY_ATTRIBUTES = ["type", "name", "source"]
 VALID_YAML_SOURCE_ATTRIBUTES = ["step", "param"]
 
 
-class Dagger:
+class Dagmate:
     """
     Takes a YAML config or a python dictionary and generates DAGs.
     :param config_filepath: the filepath of the DAG factory YAML config file.
         Must be absolute path to file. Cannot be used with `config`.
     :type config_file: str
-    :param config: DAGger config dictionary. Cannot be user with `config_file`.
+    :param config: Dagmate config dictionary. Cannot be user with `config_file`.
     :type config: dict
     """
 
@@ -64,11 +64,11 @@ class Dagger:
         Validates config file path is absolute
         """
         if not os.path.exists(config):
-            raise Exception("DAGger `config` must be absolute path")
+            raise Exception("Dagmate `config` must be absolute path")
 
     def activate(self):
         """
-        activates DAGger and uses the loaded config to
+        activates Dagmate and uses the loaded config to
             build input and output definitions for ops
             build op and dependency definitions from inputs and outputs
             build graph and job definitions
@@ -104,7 +104,7 @@ class Dagger:
         passed in @op decorator while defining the op
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _ins: Dict[str,Dict[str,Union[None,Dict[str,DagsterType]]]] ->
             a nested dictionary for input definitions for each op in each workflow
@@ -132,7 +132,7 @@ class Dagger:
         passed in @op decorator while defining the op
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _outs: Dict[str,Union[None,Dict[str,DagsterType]]] ->
             a nested dictionary for output definitions for each op in each workflow
@@ -157,7 +157,7 @@ class Dagger:
         the op resides
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _modules: Dict[str,Dict[str,ModuleType]] ->
             a nested dictionary for loaded modules for each op in each workflow
@@ -181,7 +181,7 @@ class Dagger:
         the op resides
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _modules: Dict[str,Dict[str,ModuleType]] ->
             a nested dictionary for loaded modules for each op in each workflow
@@ -207,7 +207,7 @@ class Dagger:
         the op resides
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _modules: Dict[str,Dict[str,ModuleType]] ->
             a nested dictionary for loaded modules for each op in each workflow
@@ -237,7 +237,7 @@ class Dagger:
         builds the dependency definitions and mapping of params between ops
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _modules: Dict[str,Dict[str,ModuleType]] ->
             a nested dictionary for dependency definitions for each op in each workflow
@@ -276,7 +276,7 @@ class Dagger:
         builds the graph definitions with ops as nodes and dependencies as edges
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _modules: Dict[str,GraphDefinition] ->
             a dictionary for graph definitions for each job
@@ -302,7 +302,7 @@ class Dagger:
         builds the job definitions to be loaded into the repositories
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _modules: Dict[str,JobDefinition] ->
             a dictionary for jobs for each workflow in the project
@@ -323,7 +323,7 @@ class Dagger:
         builds the schedule definitions at which the jobs need to be executed
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _modules: Dict[str,ScheduleDefinition] ->
             a dictionary for loaded modules for each workfllow in the project
@@ -349,7 +349,7 @@ class Dagger:
         of the mainframe module from which the grpc server loads
 
         :params
-            self: Dagger -> an instance of class Dagger
+            self: Dagmate -> an instance of class Dagmate
         :returns
             _repos: Dict[str,RepositoryDefinition]] ->
             a dictionary for loaded repositories for each workflow
