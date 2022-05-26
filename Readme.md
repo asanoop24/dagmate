@@ -1,12 +1,12 @@
-# DAGger
+# DAGmate
 
-### Make your **dagster** deployment easier with **dagger**.
+### Make your **dagster** deployment easier with **dagmate**.
 
 <br>
 
-`dagger` allows you to deploy your data science project in the form of workflows and steps that can be executed on demand or on a pre-defined schedule. It also provides you with a UI to view/execute the runs and their statuses and logs. Behind the scenes, it uses [**`dagster`**](https://dagster.io/). The UI is also a part of the dagster deployment.
+`dagmate` allows you to deploy your data science project in the form of workflows and steps that can be executed on demand or on a pre-defined schedule. It also provides you with a UI to view/execute the runs and their statuses and logs. Behind the scenes, it uses [**`dagster`**](https://dagster.io/). The UI is also a part of the dagster deployment.
 
-Using `dagger`, you don't need to know or interact with `dagster` or write any workflow scripts. All you need to do is create a YAML configuration file which provides info around the workflows and steps that you want to deploy in a simple way and that's it. You're done.
+Using `dagmate`, you don't need to know or interact with `dagster` or write any workflow scripts. All you need to do is create a YAML configuration file which provides info around the workflows and steps that you want to deploy in a simple way and that's it. You're done.
 
 <br>
 

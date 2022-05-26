@@ -1,6 +1,6 @@
-from dagger.core import Dagger
+from dagmate.core import Dagmate
 
 config_file = "./conf/config.yml"
 
-dagger = Dagger(config_file)
-dagger.activate()
+mate = Dagmate(config_file)
+mate.activate()
