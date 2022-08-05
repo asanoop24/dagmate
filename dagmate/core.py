@@ -25,7 +25,7 @@ from dagster import (
     repository,
 )
 
-from dagmate.utils import import_module_from_file, load_yaml, validate_file_location
+from dagmate.utils import import_module_from_file, import_module_from_package, load_yaml, validate_file_location
 
 _logger = get_dagster_logger()
 
@@ -166,7 +166,7 @@ class Dagmate:
 
         _modules = {
             _workflow["name"]: {
-                _step["name"]: import_module_from_file(f'{_step["module"]}')
+                _step["name"]: import_module_from_file(f'{_step["module"]}') if ".py" in _step["module"] else import_module_from_package(f'{_step["module"]}')
                 for _step in _workflow["steps"]
             }
             for _workflow in _conf["workflows"]

@@ -10,7 +10,7 @@ workflows:
       # step a executes the function step_fn in module located at ./src/training/a.py
       # it has no dependencies and returns 2 outputs -> x1, x2
       - name: a
-        module: ./src/training/a.py
+        module: src.training.a
         function: step_fn
         dependencies: null
         return:
@@ -19,7 +19,7 @@ workflows:
       # step b executes the function step_fn in module located at ./src/training/b.py
       # it has no dependencies and returns no outputs
       - name: b
-        module: ./src/training/b.py
+        module: src.training.b
         function: step_fn
         dependencies: null
         return: null
@@ -30,7 +30,7 @@ workflows:
       # the third dependency is order-based i.e. it depends on the completion of step b
       # it returns 2 outputs -> x4 and x5
       - name: c
-        module: ./src/training/c.py
+        module: src.training.c
         function: step_fn
         dependencies:
           - type: param
@@ -57,7 +57,7 @@ workflows:
       # the third dependency is order-based i.e. it depends on the completion of step b
       # it returns 1 output -> x6
       - name: d
-        module: ./src/training/d.py
+        module: src.training.d
         function: step_fn
         dependencies:
           - type: param
@@ -75,19 +75,19 @@ workflows:
   - name: inference
     steps:
       - name: a
-        module: ./src/inference/a.py
+        module: src.inference.a
         function: step_fn
         dependencies: null
         return:
           - x1
           - x2
       - name: b
-        module: ./src/inference/b.py
+        module: src.inference.b
         function: step_fn
         dependencies: null
         return: null
       - name: c
-        module: ./src/inference/c.py
+        module: src.inference.c
         function: step_fn
         dependencies:
           - type: param
